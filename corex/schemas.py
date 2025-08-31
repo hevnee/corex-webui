@@ -14,3 +14,4 @@ class InsertUserMessageData(BaseModel):
 
 class ChatRequest(BaseModel):
     id: str
+    search: bool
