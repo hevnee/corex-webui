@@ -2,11 +2,12 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from .config import STATIC_DIR, TEMPLATES_DIR
-from .generator import text_generation
-from .database import *
+from .config import STATIC_DIR, TEMPLATES_DIR, MODEL
+from .services.generator import text_generation
+from .services.database import *
 from .schemas import *
 import uuid
+
 
 app = FastAPI()
 app.mount(path="/static", app=StaticFiles(directory=STATIC_DIR), name="static")
@@ -26,11 +27,16 @@ async def home_page(id: str, request: Request):
 
 api = FastAPI()
 
-@api.post("/assistant_typing/{id}")
-async def api_assistant_typing(id: str):
-    chat_history = get_chat_history(id)
-    insert_assistant_message(id)
-    return StreamingResponse(text_generation(id, chat_history), media_type="text/event-stream")
+@api.post("/assistant_typing")
+async def api_assistant_typing(data: ChatRequest):
+    chat_history = get_chat_history(data.id)
+    insert_assistant_message(data.id)
+    return StreamingResponse(text_generation(
+        chat_id=data.id,
+        model=MODEL,
+        chat_history=chat_history,
+        web_search=data.search
+    ), media_type="text/event-stream")
 
 @api.post("/create_chat")
 async def api_create_chat(data: CreateChatData):
