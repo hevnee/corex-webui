@@ -3,6 +3,7 @@
     --bg-secondary: #161617;
     --bg-user-messages: #212123;
     --bg-user-messages-border: #35353a;
+    --bg-sidebar-active-chat: #28282b;
     --scrollbar-color-primary: #3b3b40 transparent;
     --scrollbar-color-secondary: #3b3b40 transparent;
     --sidebar-width: 260px;
@@ -404,7 +405,7 @@ svg {
     border: 1px solid var(--bg-user-messages-border);
     display: flex;
     padding: 0 15px;
-    padding-bottom: 45px;
+    padding-bottom: 50px;
     position: relative;
     cursor: text;
 }
@@ -451,7 +452,7 @@ svg {
     border: 1px solid var(--bg-user-messages-border);
     display: flex;
     padding: 0 15px;
-    padding-bottom: 45px;
+    padding-bottom: 50px;
     position: relative;
     cursor: text;
 }
@@ -474,6 +475,30 @@ svg {
     font-size: 48px;
     margin-bottom: 30px;
     align-items: center;
+}
+
+.search-button {
+    background-color: var(--bg-user-messages-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    height: 32px;
+    width: 32px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.search-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+.search-button:hover {
+    background-color: var(--bg-sidebar-active-chat);
 }
 
 .send-button {
