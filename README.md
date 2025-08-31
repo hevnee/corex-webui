@@ -8,8 +8,8 @@
 [![Discord](https://img.shields.io/discord/1391770662028447815?label=Discord&logo=Discord&logoColor=white&style=for-the-badge)](https://discord.gg/zs6u4TD8MX)
 [![Ollama](https://img.shields.io/badge/Ollama-white?style=for-the-badge)](https://ollama.com/)
 ![Python](https://img.shields.io/badge/Python-3.8+-blue?style=for-the-badge)
-![Github license](https://img.shields.io/github/license/hevnee/corex-webui?style=for-the-badge)
-![Github last commit](https://img.shields.io/github/last-commit/hevnee/corex-webui?style=for-the-badge)
+![Github license](https://img.shields.io/github/license/hevnee/corex-webui?style=for-the-badge&cacheSeconds=300)
+![Github last commit](https://img.shields.io/github/last-commit/hevnee/corex-webui?style=for-the-badge&cacheSeconds=300)
 
 </div>
 
