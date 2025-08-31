@@ -214,6 +214,7 @@ sendButton.addEventListener("click", async (e) => {
     const message = textarea.value;
     textarea.value = "";
     sendButton.disabled = true;
+    const searchEnabled = localStorage.getItem("searchEnabled") === "true"
     if (window.location.pathname === "/") {
         const chatName = message.trim().slice(0, 36);
         const chatId = await chatCreateDB(chatName, message);
@@ -221,18 +222,49 @@ sendButton.addEventListener("click", async (e) => {
         await renderChat(chatId);
         await sidebarChatsContainer();
         controller = new AbortController();
-        insertAssistantMessageDB(chatId, message);
+        insertAssistantMessageDB(chatId, searchEnabled);
         return;
     }
     const chatId = window.location.pathname.split("/")[2];
     await insertUserMessageDB(chatId, message);
     controller = new AbortController();
-    insertAssistantMessageDB(chatId, message);
+    insertAssistantMessageDB(chatId, searchEnabled);
 });
 
 stopButton.addEventListener("click", () => {
     if (controller) controller.abort();
 });
+
+let searchEnabled = localStorage.getItem("searchEnabled");
+function checkSearch() {
+    const searchSVG = document.getElementById("search-svg");
+    if (searchEnabled === "true") {
+        searchSVG.style.stroke = "#83b0f4";
+        searchEnabled = "true";
+    } else if (searchEnabled === "false") {
+        searchSVG.style.stroke = "white";
+        searchEnabled = "false";
+    } else {
+        localStorage.setItem("searchEnabled", "false");
+    }
+}
+
+const searchButton = document.getElementById("search-button");
+searchButton.addEventListener("click", () => {
+    const searchSVG = document.getElementById("search-svg");
+    searchButton.blur();
+    if (searchEnabled === "true") {
+        searchEnabled = "false";
+        searchSVG.style.stroke = "white";
+        localStorage.setItem("searchEnabled", "false");
+    } else {
+        searchEnabled = "true";
+        searchSVG.style.stroke = "#83b0f4";
+        localStorage.setItem("searchEnabled", "true");
+    };
+});
+
+checkSearch();
 
 async function getChatsDB() {
     const response = await fetch("/api/get_chats", {
@@ -296,7 +328,7 @@ async function getChatHistoryDB(chatId) {
     return await response.json();
 }
 
-async function insertAssistantMessageDB(chatId, message) {
+async function insertAssistantMessageDB(chatId, searchEnabled) {
     sendButton.style.display = "none";
     stopButton.style.display = "flex";
     const assistant_div = document.createElement("div");
@@ -307,19 +339,22 @@ async function insertAssistantMessageDB(chatId, message) {
     loader.className = "loader";
     assistant_div.appendChild(loader);
     smoothScrollToBottom();
+
     try {
         await new Promise(res => setTimeout(res, 300));
-        const response = await fetch(`/api/assistant_typing/${chatId}`, {
+        const response = await fetch(`/api/assistant_typing`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
+            body: JSON.stringify({id: chatId, search: searchEnabled}),
             signal: controller?.signal
         });
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         loader.remove();
         assistant_div.textContent = "";
+        
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -341,11 +376,11 @@ async function insertUserMessageDB(chatId, message) {
         },
         body: JSON.stringify({ id: chatId, message: message })
     });
-    const assistant_div = document.createElement("div");
-    assistant_div.className = "chat-user-message";
-    assistant_div.style.whiteSpace = "pre-wrap";
-    chatContainer.appendChild(assistant_div);
-    assistant_div.textContent = message;
+    const user_div = document.createElement("div");
+    user_div.className = "chat-user-message";
+    user_div.style.whiteSpace = "pre-wrap";
+    chatContainer.appendChild(user_div);
+    user_div.textContent = message;
     smoothScrollToBottom();
     return await response.json().catch(() => {});
 }
@@ -362,8 +397,8 @@ async function renderChat(chatId) {
         newChatWrapper.className = "chat-textarea-wrapper";
         newChatContainer.className = "chat-textarea-container";
         corexCentered.style.display = "none";
-        document.title = await getChatTitleDB(chatId);
         const chatHistory = await getChatHistoryDB(chatId);
+        document.title = await getChatTitleDB(chatId);
         chatHistory.forEach(message => {
             const div = document.createElement("div");
             const isUser = message.role === "user" ? "chat-user-message" : "chat-assistant-message";
