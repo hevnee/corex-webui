@@ -28,11 +28,11 @@ Corex is a powerful local WebUI for self-hosted AI, such as [Text generation web
 
 ## Installation
 
-Follow these steps to get corex-llm-webui up and running:
+Follow these steps to get corex-webui up and running:
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/corex-llm-webui.git
+git clone https://github.com/hevnee/corex-webui
 cd corex-webui
 
 # Install dependencies
