@@ -39,7 +39,6 @@ cd corex-webui
 pip install -r requirements.txt --upgrade
 
 # Launch server
-cd corex
 python server.py
 # You can also just run `server.py`
 
