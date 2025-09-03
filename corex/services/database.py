@@ -46,7 +46,7 @@ def insert_assistant_message(id: str) -> None:
     database = sqlite3.connect(file_name)
     message_order = database.execute("SELECT message_order FROM chat_history WHERE id = ? ORDER BY message_order DESC", (id,)).fetchone()[0]
     database.execute("INSERT OR IGNORE INTO chat_history VALUES (?, ?, ?, ?)", (id, message_order + 1, "assistant", ""))
-    database.execute("UPDATE chats SET last_iteraction = ? WHERE id = ?", (time.time(), id))
+    database.execute("UPDATE chats SET last_interaction = ? WHERE id = ?", (time.time(), id))
     database.commit()
     return database.close()
 
