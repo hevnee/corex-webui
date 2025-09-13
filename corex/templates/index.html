@@ -67,26 +67,37 @@
                         <path d="m 358.5,11 -67,119 65,113 h 136 z m -67,119 h -136 l -136,235 79,136 h 244 l 72,-118 h -88 -181 z"/>
                     </svg>
                 </div>
-                <label for="textarea-field" class="new-chat-textarea-container">
-                    <textarea name="" id="textarea-field" class="new-chat-textarea" placeholder="Send a message"></textarea>
-                    <button id="search-button" class="search-button">
-                        <svg id="search-svg" width="20" height="20" viewBox="0 0 512 512" stroke="white" fill="none" stroke-width="50">
-                            <path d="M 356,256 A 100,225 0 0 1 256,481 100,225 0 0 1 156,256 100,225 0 0 1 256,31 100,225 0 0 1 356,256 Z m 129,0 A 229,229 0 0 1 256,485 229,229 0 0 1 27,256 229,229 0 0 1 256,27 229,229 0 0 1 485,256 Z m 0,0 H 27"/>
-                        </svg>
-                    </button>
-                    <button id="send-button" class="send-button" disabled>
-                        <svg width="14" height="14" viewBox="0 0 512 512" fill="black">
-                            <path 
-                            style="fill-opacity:1;stroke:none;stroke-width:61.5999;stroke-linecap:round"
-                            d="m 256,103.56639 c -12.47974,-6e-5 -24.95961,4.78244 -34.52229,14.34494 L 14.343998,325.04504 c -19.1253337,19.12534 -19.1253337,49.91921 1.8e-5,69.04458 19.125334,19.12533 49.919216,19.12533 69.044557,0 L 256,221.47819 428.61143,394.08961 c 19.12534,19.12535 49.91921,19.12534 69.04456,0 19.12534,-19.12536 19.12535,-49.91922 0,-69.04457 L 290.52228,117.91133 C 280.95966,108.34872 268.47973,103.56644 256,103.56639 Z"/>
-                        </svg>
-                    </button>
-                    <button id="stop-button" class="stop-button">
-                        <svg width="12" height="12" viewBox="0 0 512 512" fill="black">
-                            <rect style="stroke-width:10" width="512" height="512" ry="130"/>
-                        </svg>
-                    </button>
-                </label>
+                
+                <div class="new-chat-textarea-container">
+                    <label for="textarea-field">
+                        <textarea name="" id="textarea-field" class="new-chat-textarea" placeholder="Send a message"></textarea>
+                    </label>
+                    <div class="textarea-left-buttons">
+                        <button id="search-button" class="search-button">
+                            <svg id="search-svg" width="20" height="20" viewBox="0 0 512 512" stroke="white" fill="none" stroke-width="50">
+                                <path d="M 356,256 A 100,225 0 0 1 256,481 100,225 0 0 1 156,256 100,225 0 0 1 256,31 100,225 0 0 1 356,256 Z m 129,0 A 229,229 0 0 1 256,485 229,229 0 0 1 27,256 229,229 0 0 1 256,27 229,229 0 0 1 485,256 Z m 0,0 H 27"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="textarea-right-buttons">
+                        <button id="model-selector-button" class="model-selector-button">
+                            <span class="model-name">unknown</span>
+                        </button>
+                        <div id="model-selector-container" class="model-selector-container"></div>
+                        <button id="send-button" class="send-button" disabled>
+                            <svg width="14" height="14" viewBox="0 0 512 512" fill="black">
+                                <path 
+                                style="fill-opacity:1;stroke:none;stroke-width:61.5999;stroke-linecap:round"
+                                d="m 256,103.56639 c -12.47974,-6e-5 -24.95961,4.78244 -34.52229,14.34494 L 14.343998,325.04504 c -19.1253337,19.12534 -19.1253337,49.91921 1.8e-5,69.04458 19.125334,19.12533 49.919216,19.12533 69.044557,0 L 256,221.47819 428.61143,394.08961 c 19.12534,19.12535 49.91921,19.12534 69.04456,0 19.12534,-19.12536 19.12535,-49.91922 0,-69.04457 L 290.52228,117.91133 C 280.95966,108.34872 268.47973,103.56644 256,103.56639 Z"/>
+                            </svg>
+                        </button>
+                        <button id="stop-button" class="stop-button">
+                            <svg width="12" height="12" viewBox="0 0 512 512" fill="black">
+                                <rect style="stroke-width:10" width="512" height="512" ry="130"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
