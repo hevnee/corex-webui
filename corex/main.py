@@ -2,11 +2,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from .config import STATIC_DIR, TEMPLATES_DIR, MODEL
+from .config import STATIC_DIR, TEMPLATES_DIR
 from .services.generator import text_generation
 from .services.database import *
 from .schemas import *
 import uuid
+import ollama
+import asyncio
 
 
 app = FastAPI()
@@ -33,7 +35,7 @@ async def api_assistant_typing(data: ChatRequest):
     insert_assistant_message(data.id)
     return StreamingResponse(text_generation(
         chat_id=data.id,
-        model=MODEL,
+        model=data.model,
         chat_history=chat_history,
         web_search=data.search
     ), media_type="text/event-stream")
@@ -73,6 +75,16 @@ async def api_get_chats():
 async def api_get_chat_title(id: str):
     title = get_chat_title(id)
     return title
+
+@api.get("/get_models")
+async def api_get_models():
+    loop = asyncio.get_event_loop()
+    try:
+        models_list = await loop.run_in_executor(None, ollama.list)
+        models = [model["model"] for model in models_list.models]
+        return models
+    except Exception as e:
+        return f"ERROR: {e}"
 
 
 async def not_found(request: Request, exc: HTTPException):
