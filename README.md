@@ -17,14 +17,16 @@
 
 Corex is a powerful local WebUI for self-hosted AI, such as [Text generation web UI](https://github.com/oobabooga/text-generation-webui) and [Open WebUI](https://github.com/open-webui/open-webui).<br>
 
-![Corex example gif](https://i.ibb.co/21LGSCJy/ezgif-8fb407f285bf72.gif)
+![Corex example gif](https://i.ibb.co/7xBWkBzs/ezgif-8b5eb87c0a9520.gif)
 
 ## Features
 
 - Supports only one local text generation backend, including Ollama (more will be added later).
 - 100% offline and private, with zero telemetry, external resources, or remote update requests.
-- Seamless integration with Ollama for local model execution
-- Simple setup and configuration for beginners
+- Seamless integration with Ollama for local model execution.
+- Simple setup and configuration for beginners.
+- Web Search: use web search for AI.
+- Model selection: the ability to switch between different models directly in the interface.
 
 ## Installation
 
@@ -45,10 +47,6 @@ python server.py
 # Install random model
 ollama pull llama3:8b
 ```
-
-> [!NOTE]
-> To use the AI model, replace `MODEL` in `config.py` with your model<br>
-> For example: MODEL = "llama3:8b"
 
 ### Requirements:
 
