@@ -30,7 +30,7 @@ body, html {
     height: 100%;
     background-color: var(--bg-primary);
     color: white;
-    overflow-y: auto;
+    overflow: hidden;
     transition: none;
 }
 
@@ -136,6 +136,7 @@ svg {
     opacity: 1;
     font-size: 14px;
     transition: var(--transition-duration);
+    user-select: none;
 }
 
 .full-width-button:hover {
@@ -339,9 +340,11 @@ svg {
 }
 
 .chat-wrapper {
-    position: absolute;
+    position: fixed;
+    overflow-y: auto;
     width: 100%;
     height: 100%;
+    scrollbar-gutter: stable both-edges;
 }
 
 .chat-container {
@@ -360,8 +363,13 @@ svg {
     padding: 70px 0;
     display: flex;
     flex-direction: column;
-    gap: 50px;
-    margin-bottom: 150px;
+    margin-bottom: 120px;
+}
+
+.chat-user-message-container {
+    display: flex;
+    flex-direction: column;
+    margin-left: auto;
 }
 
 .chat-user-message {
@@ -374,15 +382,82 @@ svg {
     border: 1px solid var(--bg-user-messages-border);
 }
 
+.chat-assistant-message-container {
+    display: flex;
+    flex-direction: column;
+}
+
 .chat-assistant-message {
     display: block;
 }
 
+.chat-message-buttons-container {
+    padding: 8px 0;
+    height: 44px;
+    display: flex;
+}
+
+.chat-copy-message {
+    background-color: transparent;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    opacity: 1;
+    transition: var(--transition-duration) opacity;
+    position: relative;
+}
+
+.chat-copy-message:hover {
+    background-color: var(--bg-user-messages-border);
+}
+
+.chat-copy-message:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 120%;
+    height: 24px;
+    width: 40px;
+    background-color: black;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-bottom: 8px;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+}
+
+.chat-user-message-container .chat-copy-message {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.chat-user-message-container:hover .chat-copy-message {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.chat-assistant-message-container .chat-copy-message {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.chat-assistant-message-container:hover .chat-copy-message {
+    opacity: 1;
+    pointer-events: all;
+}
+
 .chat-textarea-wrapper {
-    position: fixed;
+    position: absolute;
     width: 100%;
     bottom: 10px;
     display: none;
+    pointer-events: none;
 }
 
 .chat-textarea-container {
@@ -396,26 +471,13 @@ svg {
     bottom: 0;
 }
 
-.chat-textarea-field {
-    background-color: var(--bg-user-messages);
-    max-width: var(--max-centered-width);
-    width: 100%;
-    min-height: 60px;
-    border-radius: 14px;
-    border: 1px solid var(--bg-user-messages-border);
-    display: flex;
-    padding: 0 15px;
-    padding-bottom: 50px;
-    position: relative;
-    cursor: text;
-}
-
 .chat-textarea-hide-wrapper {
     position: fixed;
-    width: 100%;
+    width: calc(100% - 2vh);
     height: 60px;
     bottom: 0;
     display: none;
+    transition: var(--transition-duration);
 }
 
 .chat-textarea-hide-container {
@@ -455,6 +517,7 @@ svg {
     padding-bottom: 50px;
     position: relative;
     cursor: text;
+    pointer-events: all;
 }
 
 .new-chat-textarea {
@@ -477,14 +540,23 @@ svg {
     align-items: center;
 }
 
+.textarea-left-buttons {
+    display: flex;
+    height: 32px;
+    width: auto;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+}
+
 .search-button {
     background-color: var(--bg-user-messages-border);
     display: flex;
     justify-content: center;
     align-items: center;
-    position: absolute;
-    bottom: 8px;
-    left: 8px;
     height: 32px;
     width: 32px;
     border: none;
@@ -501,14 +573,88 @@ svg {
     background-color: var(--bg-sidebar-active-chat);
 }
 
+.textarea-right-buttons {
+    display: flex;
+    height: 32px;
+    width: auto;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+}
+
+.model-selector-button {
+    background-color: var(--bg-user-messages-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: auto;
+    padding: 0 14px;
+    height: 32px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    max-width: 400px;
+}
+
+.model-selector-button:hover {
+    background-color: var(--bg-sidebar-active-chat);
+}
+
+.model-selector-button .model-name {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.model-selector-container {
+    background-color: var(--bg-user-messages);
+    width: 160px;
+    min-height: 32px;
+    max-height: 260px;
+    transform: translateX(-20%);
+    bottom: 130%;
+    right: 0;
+    position: absolute;
+    cursor: auto;
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    border-radius: calc(var(--sidebar-button-border-radius) + 4px);
+    border: 1px solid var(--bg-user-messages-border);
+    overflow: auto;
+}
+
+.model-selector-container .button {
+    background-color: transparent;
+    border: none;
+    border-radius: var(--sidebar-button-border-radius);
+    width: 100%;
+    padding: 10px 6px;
+    cursor: pointer;
+}
+
+.model-selector-container .button:hover {
+    background-color: var(--bg-sidebar-active-chat);
+}
+
+.model-selector-container .model-name {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.model-selector-container .active {
+    background-color: var(--bg-user-messages-border);
+}
+
 .send-button {
     background-color: white;
     width: 32px;
     height: 32px;
     z-index: 1000;
-    position: absolute;
-    right: 8px;
-    bottom: 8px;
     display: flex;
     border-radius: 50%;
     justify-content: center;
@@ -532,9 +678,6 @@ svg {
     width: 32px;
     height: 32px;
     z-index: 1000;
-    position: absolute;
-    right: 8px;
-    bottom: 8px;
     display: none;
     border-radius: 50%;
     justify-content: center;
