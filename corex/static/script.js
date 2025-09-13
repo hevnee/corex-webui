@@ -20,8 +20,14 @@ const textarea = document.getElementById("textarea-field");
 const sendButton = document.getElementById("send-button");
 const stopButton = document.getElementById("stop-button");
 const chatContainer = document.getElementById("chat-messages");
+const chatWrapper = document.querySelector(".chat-wrapper");
+const copyMessageSVG = `
+    <svg width="16" height="16" viewBox="0 0 512 512" fill="white">
+        <path d="m 241,4.9 c -61,-1 -119,44 -133,103 -62,15 -107,78 -103,141 0,45 -1,90 1,135 5,69 69,125 137,123 48,0 95,1 143,-1 56,-5 105,-48 118,-103 62,-14 107,-77 103,-140 0,-45 1,-90 -1,-135 C 501,58.9 437,2.9 369,4.9 c -43,0 -85,0 -128,0 z m 0,46 c 46,0 93,-1 139,0 48,3 86,50 81,97 0,44 1,89 -1,133 -3,31 -24,60 -53,72 -1,-43 1,-87 -1,-130 -7,-67 -71,-122 -138,-119 -37,0 -73,0 -110,0 14,-32 48,-54 83,-53 z m -99,99 c 46,0 93,-1 139,0 48,3 86,50 81,97 0,44 1,88 0,132 -3,48 -50,86 -97,81 -44,0 -88,1 -132,0 -48,-3 -86,-50 -81,-97 0,-44 -1,-88 0,-132 4,-45 45,-82 90,-81 z"/>
+    </svg>
+`
 
-let sidebarWidth = localStorage.getItem("sidebar-width") || SIDEBAR_NORMAL;
+let sidebarWidth = localStorage.getItem("sidebarWidth") || SIDEBAR_NORMAL;
 root.style.setProperty("--sidebar-width", sidebarWidth);
 
 let chatMenuTarget = null;
@@ -30,7 +36,7 @@ let activeRenameInput = null;
 let controller;
 
 function smoothScrollToBottom() {
-    window.scrollTo({
+    chatWrapper.scrollTo({
         top: chatContainer.scrollHeight,
         behavior: 'smooth'
     });
@@ -39,7 +45,7 @@ function smoothScrollToBottom() {
 function updateSidebarState(isCollapsed) {
     const newWidth = isCollapsed ? SIDEBAR_SMALL : SIDEBAR_NORMAL;
     root.style.setProperty("--sidebar-width", newWidth);
-    localStorage.setItem("sidebar-width", newWidth);
+    localStorage.setItem("sidebarWidth", newWidth);
     const opacity = isCollapsed ? "0" : "1";
     const pointerEvents = isCollapsed ? "none" : "all";
     [newChatSpan, sidebarChats, CorexButton].forEach(el => {
@@ -61,7 +67,7 @@ function handleWindowResize() {
     const shouldCollapse = window.innerWidth <= 800;
     root.style.setProperty(
         "--sidebar-width",
-        shouldCollapse ? "0px" : localStorage.getItem("sidebar-width") || SIDEBAR_NORMAL
+        shouldCollapse ? "0px" : localStorage.getItem("sidebarWidth") || SIDEBAR_NORMAL
     );
 };
 
@@ -98,7 +104,7 @@ function menuChatsButtonFunc() {
         });
     });
 
-    document.addEventListener("click", e => {
+    document.addEventListener("click", async (e) => {
         if (!chatContextMenu.contains(e.target)) {
             chatContextMenu.style.display = "none";
             chatMenuTarget = null;
@@ -209,6 +215,12 @@ textarea.addEventListener("keydown", function(e) {
     }
 });
 
+document.querySelector('.new-chat-textarea-container')
+    .addEventListener('click', e => {
+        if (e.target.closest('.textarea-left-buttons, .textarea-right-buttons')) return;
+        document.getElementById('textarea-field').focus();
+    });
+
 sendButton.addEventListener("click", async (e) => {
     if (stopButton.style.display === "flex") return;
     const message = textarea.value;
@@ -222,13 +234,13 @@ sendButton.addEventListener("click", async (e) => {
         await renderChat(chatId);
         await sidebarChatsContainer();
         controller = new AbortController();
-        insertAssistantMessageDB(chatId, searchEnabled);
+        insertAssistantMessage(chatId, searchEnabled);
         return;
     }
     const chatId = window.location.pathname.split("/")[2];
     await insertUserMessageDB(chatId, message);
     controller = new AbortController();
-    insertAssistantMessageDB(chatId, searchEnabled);
+    insertAssistantMessage(chatId, searchEnabled);
 });
 
 stopButton.addEventListener("click", () => {
@@ -273,7 +285,17 @@ async function getChatsDB() {
             "Content-Type": "application/json"
         }
     });
-    return await response.json();
+    return await response.json().catch(() => {});
+}
+
+async function getModelsDB() {
+    const response = await fetch("/api/get_models", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+    return await response.json().catch(() => {});
 }
 
 async function chatCreateDB(chatName, message) {
@@ -284,7 +306,7 @@ async function chatCreateDB(chatName, message) {
         },
         body: JSON.stringify({name: chatName, message: message})
     });
-    return await response.json();
+    return await response.json().catch(() => {});
 }
 
 async function chatRenameDB(chatId, chatName) {
@@ -328,13 +350,21 @@ async function getChatHistoryDB(chatId) {
     return await response.json();
 }
 
-async function insertAssistantMessageDB(chatId, searchEnabled) {
+async function insertAssistantMessage(chatId, searchEnabled) {
     sendButton.style.display = "none";
     stopButton.style.display = "flex";
+    
+    const container = document.createElement("div");
+    container.className = "chat-assistant-message-container";
     const assistant_div = document.createElement("div");
-    assistant_div.className = "chat-assistant-message";
+    assistant_div.className = "chat-message chat-assistant-message";
     assistant_div.style.whiteSpace = "pre-wrap";
-    chatContainer.appendChild(assistant_div);
+    const buttons = document.createElement("div");
+    buttons.className = "chat-message-buttons-container";
+    container.appendChild(assistant_div);
+    container.appendChild(buttons);
+    chatContainer.appendChild(container);
+
     const loader = document.createElement("div");
     loader.className = "loader";
     assistant_div.appendChild(loader);
@@ -342,29 +372,56 @@ async function insertAssistantMessageDB(chatId, searchEnabled) {
 
     try {
         await new Promise(res => setTimeout(res, 300));
+        let model = localStorage.getItem("selectedModel");
+        if (model === null) {
+            model = "Unknown";
+        }
         const response = await fetch(`/api/assistant_typing`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({id: chatId, search: searchEnabled}),
+            body: JSON.stringify({id: chatId, model: model, search: searchEnabled}),
             signal: controller?.signal
         });
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        loader.remove();
-        assistant_div.textContent = "";
         
+        
+        let chatHeight = chatContainer.scrollHeight
+        let load = false
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
+            if (!load) {
+                if (value) {
+                    assistant_div.innerHTML = "";
+                    load = true;
+                };
+            };
             assistant_div.textContent += decoder.decode(value, { stream: true });
-        }
+            if (chatHeight !== chatContainer.scrollHeight) {
+                const isAtBottom = chatWrapper.scrollTop + chatWrapper.clientHeight >= chatWrapper.scrollHeight - 36;
+                if (isAtBottom) {
+                    chatWrapper.scrollTo({
+                        top: chatContainer.scrollHeight,
+                        behavior: 'instant'
+                    });
+                };
+                chatHeight = chatContainer.scrollHeight;
+            };
+        };
     } catch (err) {
         if (err?.name !== "AbortError") console.error(err);
     } finally {
+        loader.remove();
         sendButton.style.display = "flex";
         stopButton.style.display = "none";
+        buttons.innerHTML = `
+            <button class="chat-copy-message" data-tooltip="Copy">
+                ${copyMessageSVG}
+            </button>
+        `;
     }
 }
 
@@ -376,42 +433,101 @@ async function insertUserMessageDB(chatId, message) {
         },
         body: JSON.stringify({ id: chatId, message: message })
     });
+    const container = document.createElement("div");
+    container.className = "chat-user-message-container";
+
     const user_div = document.createElement("div");
-    user_div.className = "chat-user-message";
+    user_div.className = "chat-message chat-user-message";
     user_div.style.whiteSpace = "pre-wrap";
-    chatContainer.appendChild(user_div);
     user_div.textContent = message;
+
+    const buttons = document.createElement("div");
+    buttons.className = "chat-message-buttons-container";
+    buttons.style.justifyContent = "end";
+    buttons.innerHTML = `
+        <button class="chat-copy-message" data-tooltip="Copy">
+            ${copyMessageSVG}
+        </button>
+    `;
+
+    container.appendChild(user_div);
+    container.appendChild(buttons);
+    chatContainer.appendChild(container);
+
     smoothScrollToBottom();
     return await response.json().catch(() => {});
 }
+
+
+
+chatContainer.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("chat-copy-message")) {
+        const text = e.target.parentElement.parentElement.querySelector(".chat-message").textContent
+        navigator.clipboard.writeText(text).then(() => {
+            const svgCopied = `
+                <svg width="16" height="16" viewBox="0 0 512 512" fill="white">
+                    <path d="m 485.5,79.6 c -6.7,0 -13.6,2.6 -18.7,7.8 L 185.7,368.4 45.2,228 c -10.3,-10.3 -27,-10.3 -37.4,0.1 -10.4,10.4 -10.4,27.1 -0.1,37.4 L 166.9,424.7 c 5.8,5.8 13.7,8.4 21.3,7.7 5.9,-0.6 11.7,-3.2 16.2,-7.7 L 504.2,124.9 c 10.4,-10.4 10.4,-27.1 0,-37.5 -5.2,-5.2 -12,-7.8 -18.7,-7.8 z"/>
+                </svg>
+            `
+            e.target.innerHTML = svgCopied
+            setTimeout(() => {
+                e.target.innerHTML = copyMessageSVG
+            }, 1500);
+        })
+    }
+})
 
 async function renderChat(chatId) {
     const newChatWrapper = document.getElementById("new-chat-wrapper");
     const chatTextareaHide = document.getElementById("chat-textarea-hide");
     const newChatContainer = document.getElementById("new-chat-container");
-    const corexCentered = document.getElementById("corex-centered");
+    const corexCentered = document.querySelector(".centered-text");
     newChatWrapper.style.display = "inline";
     chatContainer.innerHTML = "";
+
     if (chatId !== "/") {
+        chatContainer.style.display = "flex"
         chatTextareaHide.style.display = "inline";
         newChatWrapper.className = "chat-textarea-wrapper";
         newChatContainer.className = "chat-textarea-container";
         corexCentered.style.display = "none";
         const chatHistory = await getChatHistoryDB(chatId);
         document.title = await getChatTitleDB(chatId);
+
         chatHistory.forEach(message => {
             const div = document.createElement("div");
-            const isUser = message.role === "user" ? "chat-user-message" : "chat-assistant-message";
-            div.className = isUser;
+            const isUser = message.role === "user";
+            const isUserMessage = isUser ? "chat-user-message" : "chat-assistant-message";
+            const copyButtonPosition = isUser ? "justify-content: end;" : "justify-content: start;";
+
+            div.className = isUser ? "chat-user-message-container" : "chat-assistant-message-container";
+
+            const messageDiv = document.createElement("div");
+            messageDiv.className = `chat-message ${isUserMessage}`;
+            messageDiv.textContent = message.content;
+
+            const buttonsContainer = document.createElement("div");
+            buttonsContainer.className = "chat-message-buttons-container";
+            buttonsContainer.style = copyButtonPosition;
+
+            const copyButton = document.createElement("button");
+            copyButton.className = "chat-copy-message";
+            copyButton.setAttribute("data-tooltip", "Copy");
+            copyButton.innerHTML = copyMessageSVG;
+
+            buttonsContainer.appendChild(copyButton);
+            div.appendChild(messageDiv);
+            div.appendChild(buttonsContainer);
+
             div.style.whiteSpace = "pre-wrap";
-            div.textContent = message.content;
             chatContainer.appendChild(div);
         });
-        window.scrollTo({
+        chatWrapper.scrollTo({
             top: chatContainer.scrollHeight,
-            behavior: "auto"
+            behavior: 'instant'
         });
     } else {
+        chatContainer.style.display = "none"
         chatTextareaHide.style.display = "none";
         newChatWrapper.className = "new-chat-wrapper";
         newChatContainer.className = "new-chat-container";
@@ -458,3 +574,62 @@ if (window.location.pathname === "/") {
 }
 
 sidebarChatsContainer();
+
+
+let modelSelectorOpen = false;
+const modelSelectorButton = document.getElementById("model-selector-button");
+const modelSelectorContainer = document.getElementById("model-selector-container");
+
+async function renderModels() {
+    const models = await getModelsDB();
+    modelSelectorContainer.innerHTML = "";
+
+    if (!models || models.length === 0 || typeof(models) === "string") {
+        const message = document.createElement("div");
+        if (typeof(models) === "string") {
+            message.textContent = models;
+        } else {
+            message.textContent = "You don't have any models";
+        };
+        message.style.padding = "5px 10px";
+        modelSelectorContainer.appendChild(message);
+        return;
+    }
+
+    const savedModel = localStorage.getItem("selectedModel") || "Unknown";
+
+    models.forEach(model => {
+        const btn = document.createElement("button");
+        btn.className = "button" + (model === savedModel ? " active" : "");
+        const span = document.createElement("span");
+        span.className = "model-name";
+        span.textContent = model;
+        btn.appendChild(span);
+        btn.addEventListener("click", () => {
+            modelSelectorButton.querySelector(".model-name").textContent = model;
+            modelSelectorContainer.querySelectorAll(".button").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            localStorage.setItem("selectedModel", model);
+            modelSelectorContainer.style.display = "none";
+            modelSelectorOpen = false;
+        });
+        modelSelectorContainer.appendChild(btn);
+    });
+
+    modelSelectorButton.querySelector(".model-name").textContent = savedModel;
+}
+
+modelSelectorButton.addEventListener("click", () => {
+    modelSelectorOpen = !modelSelectorOpen;
+    modelSelectorContainer.style.display = modelSelectorOpen ? "flex" : "none";
+    if (modelSelectorOpen) renderModels();
+});
+
+document.addEventListener("click", e => {
+    if (!modelSelectorContainer.contains(e.target) && !modelSelectorButton.contains(e.target)) {
+        modelSelectorContainer.style.display = "none";
+        modelSelectorOpen = false;
+    }
+});
+
+renderModels();
